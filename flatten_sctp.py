@@ -3,7 +3,7 @@
 """
 (C) Copyright 2016-2017 Holger Hans Peter Freyther
 
-GNU AGPLv3+ 
+GNU AGPLv3+
 """
 
 from scapy.all import rdpcap, Ether, IP, SCTP, SCTPChunkData, wrpcap
@@ -20,6 +20,7 @@ seq = 0
 for pkt in pcap:
     ip = pkt['IP']
     layer = ip.payload
+    sctp = ip.payload
     while layer.name != 'NoPayload':
         if layer.name == 'SCTP':
             sport = layer.sport
@@ -27,7 +28,9 @@ for pkt in pcap:
             tag = layer.tag
         if layer.name == 'SCTPChunkData':
             # re-create the chunkdata as I don't find the routine to just have this data...
-            pkts.append(Ether()/IP()/SCTP(sport=sport,dport=dport,tag=tag)/SCTPChunkData(reserved=0, delay_sack=0, unordered=0, beginning=1, ending=1, stream_id=layer.stream_id, proto_id=layer.proto_id, stream_seq=layer.stream_seq, tsn=layer.tsn, data=layer.data))
+            newpkt=Ether()/ip/sctp/SCTPChunkData(reserved=0, delay_sack=0, unordered=0, beginning=1, ending=1, stream_id=layer.stream_id, proto_id=layer.proto_id, stream_seq=layer.stream_seq, tsn=layer.tsn, data=layer.data)
+            newpkt.time=pkt.time
+            pkts.append(newpkt)
             seq = seq + 1
         layer = layer.payload
     i = i + 1
